@@ -132,7 +132,7 @@ post_install = "pre-commit-install"
 
     [tool.poe.tasks.check]
     help     = "Run all checks on the code base"
-    sequence = ["style", "bandit", "types", "lint", "test"]
+    sequence = ["style", "bandit", "types", "lint", "test-docker"]
     ignore_fail = "return_non_zero"
 
     [tool.poe.tasks.migrate]
