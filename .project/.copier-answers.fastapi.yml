@@ -1,0 +1,18 @@
+# Changes here will be overwritten by Copier
+_commit: v1.1.2
+_src_path: https://github.com/worldworm/copier-fastapi.git
+copyright_license: None
+database_type: postgres
+package_distribution_name: fastapi-todo-api-2-axel
+package_import_name: fastapi_todo_api
+project_description: Test my skill in fast api
+project_name: FastApi Todo Api
+repository_name: fastapi-todo-api-2
+repository_provider: GitHub
+repository_url: https://github.com/tendryAxel/fastapi-todo-api-2
+repository_username: tendryAxel
+use_database: true
+use_database_migrations: true
+use_docker: true
+use_dotenv: true
+use_versionizer: true

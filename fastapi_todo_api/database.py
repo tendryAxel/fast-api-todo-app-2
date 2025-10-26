@@ -1,0 +1,55 @@
+"""Database connection and session management."""
+from collections.abc import Generator
+from typing import Annotated
+
+from fastapi import Depends
+from loguru import logger
+from sqlalchemy import URL
+from sqlmodel import Session, SQLModel, create_engine
+
+from alembic import command
+from alembic.config import Config
+
+from .config import settings
+
+alembic_config = Config("alembic.ini")
+
+db_args = {
+    "drivername": settings.DB_DRIVER,
+    "database": settings.DB_NAME,
+}
+if settings.DB_DRIVER != "sqlite":
+    db_args.update({
+        "username": settings.DB_USER,
+        "password": settings.DB_PASSWORD,
+        "host": settings.DB_HOST,
+    })
+DATABASE_URL = URL.create(**db_args)  # type: ignore
+
+engine = create_engine(DATABASE_URL, echo=False)
+
+
+def get_session() -> Generator[Session, None, None]:
+    """Get a database session."""
+    with Session(engine) as session:
+        yield session
+
+
+SessionDep = Annotated[Session, Depends(get_session)]
+
+
+def create_db_and_tables() -> None:  # pragma: no cover
+    """Create database and tables."""
+    SQLModel.metadata.create_all(engine)
+
+
+def apply_migrations() -> None:  # pragma: no cover
+    """Apply alembic db migrations to head."""
+    if settings.DB_AUTO_MIGRATE:
+        logger.info("Applying database migrations")
+        with Session(engine) as session:
+            alembic_config.attributes["connection"] = session.connection()
+            command.upgrade(alembic_config, "head")
+            session.commit()
+    else:
+        logger.info("Skipping database migrations")

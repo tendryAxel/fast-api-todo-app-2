@@ -1,0 +1,145 @@
+[tool.poetry]
+name = "fastapi-todo-api-2-axel"
+version = "0.1.0"
+description = "Test my skill in fast api"
+authors = ["tendryAxel"]
+readme = "README.md"
+repository = "https://github.com/tendryAxel/fastapi-todo-api-2"
+homepage = "https://github.com/tendryAxel/fastapi-todo-api-2"
+
+keywords = []
+packages = [{include = "fastapi_todo_api"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.115.0"
+uvicorn = {extras = ["standard"], version = "^0.34.0"}
+pydantic = {extras = ["email"], version = "^2.11.0"}
+fastapi-versionizer = "^4.0.1"
+loguru = "^0.7.3"
+pydantic-settings = "^2.9.0"
+sqlmodel = "^0.0.24"
+alembic = "^1.15.0"
+psycopg2-binary = "^2.9.10"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^4.2.0"
+pytest = "^8.3.5"
+pytest-cov = "^6.1.1"
+pylint = "^3.3.6"
+poethepoet = "^0.34.0"
+pydocstringformatter = "^0.7.3"
+bandit = "^1.8.3"
+mypy = "^1.15.0"
+autopep8 = "^2.3.2"
+isort = "^6.0.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.autopep8]
+max_line_length = 150
+
+[tool.isort]
+line_length = 150
+
+[tool.pydocstringformatter]
+write = true
+strip-whitespaces = true
+split-summary-body = false
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+plugins = ["pydantic.mypy"]
+exclude = "tests/*"
+
+[tool.poe.poetry_hooks]
+post_install = "pre-commit-install"
+
+[tool.poe.tasks]
+
+    [tool.poe.tasks.run]
+    help = "Start the project"
+    cmd = "python -m fastapi_todo_api.main"
+
+    [tool.poe.tasks.dev]
+    help = "Start the development server"
+    cmd = "uvicorn fastapi_todo_api.main:app --reload"
+
+    [tool.poe.tasks.lint]
+    help = "Lint the project"
+    cmd = "pylint fastapi_todo_api"
+
+    [tool.poe.tasks.types]
+    help = "Type-check the project"
+    cmd = "mypy ."
+
+    [tool.poe.tasks.format]
+    help = "Format the code"
+    cmd  = "autopep8 --in-place --recursive ."
+
+    [tool.poe.tasks.test]
+    help = "Run unit tests"
+    cmd = "pytest"
+
+    [tool.poe.tasks.cov]
+    help = "Run unit tests with coverage"
+    cmd = "pytest --cov=fastapi_todo_api --cov-report term --cov-report xml:coverage.xml"
+
+    [tool.poe.tasks.clean]
+    help = "Clean up project files"
+    cmd = """
+        rm -rf ./**/*.pyc
+               ./**/__pycache__
+               .mypy_cache
+               .pytest_cache
+               coverage.xml
+               .coverage
+    """
+
+    [tool.poe.tasks.pre-commit-install]
+    help = "Install pre-commit hooks"
+    shell = """
+        if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+            poetry run pre-commit install --install-hooks
+        else
+            echo "Skipping pre-commit install because this is not a git repository!"
+        fi
+    """
+
+    [tool.poe.tasks.pre-commit-run]
+    help = "Run pre-commit checks"
+    cmd = "pre-commit run --all-files"
+
+    [tool.poe.tasks.docstringformatter]
+    help = "Format docstrings"
+    cmd = "pydocstringformatter ."
+
+    [tool.poe.tasks.sort]
+    help = "Sort imports"
+    cmd = "isort ."
+
+    [tool.poe.tasks.bandit]
+    help = "Run security checks"
+    cmd = "bandit -c pyproject.toml -r fastapi_todo_api"
+
+    [tool.poe.tasks.style]
+    help     = "Run all style formatters on the code base"
+    sequence = ["docstringformatter", "sort", "format"]
+    ignore_fail = "return_non_zero"
+
+    [tool.poe.tasks.check]
+    help     = "Run all checks on the code base"
+    sequence = ["style", "bandit", "types", "lint", "test"]
+    ignore_fail = "return_non_zero"
+
+    [tool.poe.tasks.migrate]
+    help = "Run database migrations"
+    cmd = "alembic upgrade head"
+
+    [tool.poe.tasks.revision]
+    help = "Create a new database revision (--message required)"
+    cmd = "alembic revision --autogenerate --message ${message}"
+    args = [{name = "message", required = true, type = "string"}]

@@ -1,0 +1,63 @@
+"""Module for filtering utilities."""
+from collections import Counter
+from typing import Annotated, Any, Callable, Type
+
+from fastapi import HTTPException, Query
+from pydantic import BaseModel, StringConstraints
+from sqlalchemy.sql.elements import BinaryExpression
+
+
+class FilterBy(BaseModel):
+    """Model for filtering criteria."""
+    field: str
+    query: str
+    relational_model: str | None = None
+
+    @staticmethod
+    def create(fields: list[str]) -> str:
+        """Create a regex pattern for allowed filtering options."""
+        return "|".join(f"^{field}:.*$" for field in fields)
+
+    @staticmethod
+    def parse(filter_value: str) -> "FilterBy":
+        """Parse a filter value string into a FilterBy object."""
+        parts = filter_value.split(":", 1)
+        parts_field = parts[0].split(".")
+        field = parts_field[-1]
+        relational_model = parts_field[0] if len(parts_field) > 1 else None
+        query = parts[1] or ""
+        return FilterBy(field=field, query=query, relational_model=relational_model)
+
+    def clause(self, model: Type[BaseModel], relational_models: list[Type[BaseModel]] | None = None) -> BinaryExpression[Any]:
+        """Return the SQL WHERE clause."""
+        if self.relational_model and relational_models:
+            used_model = next((m for m in relational_models if m.__name__.lower() == self.relational_model), None)
+        else:
+            used_model = model
+        if not used_model:
+            raise HTTPException(status_code=422, detail=f"Invalid field '{self.field}' supplied for filter")
+
+        if "%" in self.query:
+            return getattr(used_model, self.field).ilike(self.query)  # type: ignore
+        return getattr(used_model, self.field) == self.query  # type: ignore
+
+
+def parse_filter(model: Type[BaseModel], relational_models: list[Type[BaseModel]] | None = None) -> Callable[[list[str]], list[FilterBy]]:
+    """Factory function to create a filter parser for the given model."""
+    fields = list(model.model_fields.keys())
+    if relational_models:
+        for relational_model in relational_models:
+            fields.extend([f"{relational_model.__name__.lower()}.{field}" for field in relational_model.model_fields.keys()])
+
+    def _parse_filter(filter: list[Annotated[str, StringConstraints(pattern=FilterBy.create(fields))]] =  # pylint: disable=redefined-builtin
+                      Query(None, description=f"Filter by '{{field}}:{{query}}'<br>"
+                            f"Use '%' for wildcard matching<br>Allowed fields: {fields}")) -> list[FilterBy]:
+        if not isinstance(filter, list):
+            return []
+        resp = [FilterBy.parse(f) for f in filter]
+        counter = Counter([f.field for f in resp])
+        if counter.most_common(1)[0][1] > 1:
+            raise HTTPException(status_code=422, detail="Duplicate query parameters supplied for filter")
+        return resp
+
+    return _parse_filter

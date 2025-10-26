@@ -1,0 +1,8 @@
+"""Load example env file for testing."""
+import os
+
+from dotenv import find_dotenv, load_dotenv
+
+env_file = find_dotenv("example.env")
+load_dotenv(env_file)
+os.environ["PYTEST"] = "True"

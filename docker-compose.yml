@@ -1,0 +1,25 @@
+version: "3"
+
+services:
+  FastApi Todo Api:
+    image: tendryAxel/FastApi Todo Api:latest
+    build: .
+    container_name: FastApi Todo Api
+    restart: unless-stopped
+    ports:
+      - 8000:8000
+    env_file: .env
+    depends_on:
+      - FastApi Todo Api-db
+  FastApi Todo Api-db:
+    image: postgres:16
+    container_name: FastApi Todo Api-db
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    # ports:
+    #   - 5432:5432
