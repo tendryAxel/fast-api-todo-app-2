@@ -1,4 +1,7 @@
-FROM python:3.10-alpine
+# =========================
+# 🐍 Base image
+# =========================
+FROM python:3.10-alpine AS base
 
 LABEL maintainer="tendryAxel"
 LABEL description="Test my skill in fast api"
@@ -19,9 +22,30 @@ RUN apk update && \
     poetry config virtualenvs.create false
 
 COPY pyproject.toml poetry.lock /app/
-RUN poetry install --only main --no-dev --no-root --no-interaction --no-ansi
+
+# =========================
+# 🚀 Production stage
+# =========================
+FROM base AS prod
+RUN poetry install --only main --no-root --no-interaction --no-ansi
 
 COPY . /app/
 
 EXPOSE 8000
 CMD ["poetry", "run", "python", "-m", "fastapi_todo_api.main"]
+
+# =========================
+# 🧪 Test stage
+# =========================
+FROM base AS test
+RUN poetry install --with dev --no-root --no-interaction --no-ansi
+COPY . /app/
+CMD ["poetry", "run", "pytest", "-v"]
+
+# =========================
+# 🧪 Test coverage stage
+# =========================
+FROM base AS cov
+RUN poetry install --with dev --no-root --no-interaction --no-ansi
+COPY . /app/
+CMD ["poetry", "run", "poe", "cov"]

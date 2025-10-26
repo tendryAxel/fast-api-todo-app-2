@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     DB_PASSWORD: str
     DB_NAME: str
     DB_AUTO_MIGRATE: bool = True
+    PORT: int
 
 
 settings = Settings()

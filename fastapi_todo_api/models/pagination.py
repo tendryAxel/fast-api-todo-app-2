@@ -9,13 +9,13 @@ class Pagination(BaseModel):
     result_count: int = Field(description="Total count of objects in filtered result set.", examples=[200])
     total_count: int = Field(description="Total count of objects before filtering.", examples=[200])
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def total_pages(self) -> int:
         """Total number of pages."""
         return (self.result_count + self.size - 1) // self.size
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def last_page(self) -> int:
         """Last page number (0 indexed)."""
