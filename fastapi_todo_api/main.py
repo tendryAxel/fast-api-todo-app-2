@@ -5,6 +5,7 @@ from fastapi_versionizer.versionizer import Versionizer
 
 from . import database
 from .api.routers import router
+from .config import settings
 
 app = FastAPI(
     title="FastApi Todo Api",
@@ -34,7 +35,7 @@ async def healthcheck() -> dict[str, str]:
 
 def main() -> None:
     """Main function."""
-    uvicorn.run(app, host="0.0.0.0")  # nosec
+    uvicorn.run(app, host="0.0.0.0", port=settings.PORT)  # nosec
 
 
 if __name__ == "__main__":

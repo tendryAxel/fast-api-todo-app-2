@@ -143,3 +143,11 @@ post_install = "pre-commit-install"
     help = "Create a new database revision (--message required)"
     cmd = "alembic revision --autogenerate --message ${message}"
     args = [{name = "message", required = true, type = "string"}]
+
+    [tool.poe.tasks.test-docker]
+    help = "Run unit tests in docker container"
+    cmd = "sh ./scripts/docker/test.sh"
+
+    [tool.poe.tasks.cov-docker]
+    help = "Run unit tests with coverage in docker container"
+    cmd = "sh ./scripts/docker/cov.sh"
